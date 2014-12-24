@@ -6,18 +6,25 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
-func Test_parsesTheHostname(t *testing.T) {
+var packetBytes []byte
+var err error
 
-	fileBytes, err := ioutil.ReadFile("cpu_disk_packet.dat")
-
+func TestMain(m *testing.M) {
+	packetBytes, err = ioutil.ReadFile("cpu_disk_packet.dat")
 	if err != nil {
 		fmt.Errorf("error encountered %v", err)
 	}
 
-	buffer := bytes.NewBuffer(fileBytes)
+	os.Exit(m.Run())
+}
+
+func Test_parsesTheHostname(t *testing.T) {
+
+	buffer := bytes.NewBuffer(packetBytes)
 
 	var partType uint16
 	var partLength uint16
