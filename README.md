@@ -1,4 +1,4 @@
-go-collectd-parser
+go-collectd
 ==================
 
-A collectd parser in golang
+A collectd library in golang
