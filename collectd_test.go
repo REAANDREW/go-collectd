@@ -13,6 +13,7 @@ import (
 const (
 	HOSTNAME      uint16 = 0x0000
 	HIGH_DEF_TIME uint16 = 0x0008
+	PLUGIN        uint16 = 0x0002
 )
 
 type Header struct {
@@ -38,6 +39,7 @@ func init() {
 	parsers = map[uint16]ParsePart{
 		HOSTNAME:      ParseStringPart,
 		HIGH_DEF_TIME: ParseHighDefNumericPart,
+		PLUGIN:        ParseStringPart,
 	}
 }
 
@@ -106,49 +108,59 @@ func parseParts(buffer *bytes.Buffer) []interface{} {
 				fmt.Errorf("err encountered %v", err)
 			}
 			partsSlice = append(partsSlice, part)
+		} else {
+			buffer.Next(int(header.Length - 4))
 		}
 	}
 	return partsSlice
 }
 
-func FindStringPart(partTypeId uint16, parts []interface{}) (stringPart StringPart, err error) {
-	var part StringPart
+func FindStringParts(partTypeId uint16, parts []interface{}) (stringParts []StringPart, err error) {
+	var returnParts []StringPart
 	for _, value := range parts {
 		switch value := value.(type) {
 		case StringPart:
 			if value.Header.Type == partTypeId {
-				part = value
-				return part, nil
+				returnParts = append(returnParts, value)
 			}
 		}
 	}
-	return StringPart{}, nil
+	return returnParts, nil
 }
 
-func FindNumericPart(partTypeId uint16, parts []interface{}) (numericPart NumericPart, err error) {
-	var part NumericPart
+func FindNumericParts(partTypeId uint16, parts []interface{}) (numericParts []NumericPart, err error) {
+	var returnParts []NumericPart
 	for _, value := range parts {
 		switch value := value.(type) {
 		case NumericPart:
 			if value.Header.Type == partTypeId {
-				part = value
-				return part, nil
+				returnParts = append(returnParts, value)
 			}
 		}
 	}
-	return NumericPart{}, nil
+	return returnParts, nil
 }
 
 func Test_parsesTheHostname(t *testing.T) {
 	buffer := bytes.NewBuffer(packetBytes)
 	parts := parseParts(buffer)
-	hostname_part, _ := FindStringPart(HOSTNAME, parts)
-	assert.Equal(t, hostname_part.Content, "localhost", "contents does not equal localhost")
+	hostname_parts, _ := FindStringParts(HOSTNAME, parts)
+	assert.Equal(t, len(hostname_parts), 1, "number of parts is not equal to 1")
+	assert.Equal(t, hostname_parts[0].Content, "localhost", "contents does not equal localhost")
 }
 
 func Test_parsesTheHighDefinitionTime(t *testing.T) {
 	buffer := bytes.NewBuffer(packetBytes)
 	parts := parseParts(buffer)
-	time_part, _ := FindNumericPart(HIGH_DEF_TIME, parts)
-	assert.Equal(t, time_part.Content, 1419415668, "contents does not equal expected")
+	time_parts, _ := FindNumericParts(HIGH_DEF_TIME, parts)
+	assert.Equal(t, len(time_parts), 24, "number of parts is not equal to 1")
+	assert.Equal(t, time_parts[0].Content, 1419415668, "contents does not equal expected")
+}
+
+func Test_parsesThePlugin(t *testing.T) {
+	buffer := bytes.NewBuffer(packetBytes)
+	parts := parseParts(buffer)
+	plugin_parts, _ := FindStringParts(PLUGIN, parts)
+	assert.Equal(t, len(plugin_parts), 1, "number of parts is not equal to 1")
+	assert.Equal(t, plugin_parts[0].Content, "disk", "plugin content does not equal expected")
 }
