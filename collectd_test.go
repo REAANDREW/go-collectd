@@ -32,6 +32,14 @@ type NumericPart struct {
 
 var packetBytes []byte
 var err error
+var parsers map[uint16]ParsePart
+
+func init() {
+	parsers = map[uint16]ParsePart{
+		HOSTNAME:      ParseStringPart,
+		HIGH_DEF_TIME: ParseHighDefNumericPart,
+	}
+}
 
 func TestMain(m *testing.M) {
 	packetBytes, err = ioutil.ReadFile("cpu_disk_packet.dat")
@@ -42,38 +50,62 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+type ParsePart func(header Header, buffer *bytes.Buffer) (part interface{}, err error)
+
+func ParseHeader(buffer *bytes.Buffer) (header Header, err error) {
+	var partType uint16
+	var partLength uint16
+
+	err = binary.Read(buffer, binary.BigEndian, &partType)
+	if err != nil {
+		return Header{}, err
+	}
+
+	err = binary.Read(buffer, binary.BigEndian, &partLength)
+	if err != nil {
+		return Header{}, err
+	}
+	return Header{partType, partLength}, nil
+}
+
+func ParseStringPart(header Header, buffer *bytes.Buffer) (part interface{}, err error) {
+	contentBytes := buffer.Next(int(header.Length - 4))
+	//Trim the null terminating byte from the string
+	content := string(contentBytes[0 : len(contentBytes)-1])
+	return StringPart{header, content}, nil
+}
+
+func ParseNumericPart(header Header, buffer *bytes.Buffer) (part interface{}, err error) {
+	var content int64
+	err = binary.Read(buffer, binary.BigEndian, &content)
+	if err != nil {
+		return NumericPart{}, err
+	}
+	return NumericPart{header, content}, nil
+}
+
+func ParseHighDefNumericPart(header Header, buffer *bytes.Buffer) (part interface{}, err error) {
+	parsedPart, err := ParseNumericPart(header, buffer)
+	numericPart := parsedPart.(NumericPart)
+	if err != nil {
+		return NumericPart{}, err
+	}
+	return NumericPart{numericPart.Header, numericPart.Content >> 30}, nil
+}
+
 func parseParts(buffer *bytes.Buffer) []interface{} {
 	var partsSlice []interface{}
 	for buffer.Len() > 0 {
-		var partType uint16
-		var partLength uint16
-		var content string
-
-		err = binary.Read(buffer, binary.BigEndian, &partType)
+		header, err := ParseHeader(buffer)
 		if err != nil {
-			fmt.Errorf("error encountered %v", err)
+			fmt.Errorf("err encountered %v", err)
 		}
-
-		err = binary.Read(buffer, binary.BigEndian, &partLength)
-		if err != nil {
-			fmt.Errorf("error encountered %v", err)
-		}
-
-		switch partType {
-		case HOSTNAME:
-			contentBytes := buffer.Next(int(partLength - 4))
-			//Trim the null terminating byte from the string
-			content = string(contentBytes[0 : len(contentBytes)-1])
-			partsSlice = append(partsSlice, StringPart{Header{partType, partLength}, content})
-
-		case HIGH_DEF_TIME:
-			var content int64
-			err = binary.Read(buffer, binary.BigEndian, &content)
+		if parser, ok := parsers[header.Type]; ok {
+			part, err := parser(header, buffer)
 			if err != nil {
-				fmt.Errorf("error encountered %v", err)
+				fmt.Errorf("err encountered %v", err)
 			}
-			content = content >> 30
-			partsSlice = append(partsSlice, NumericPart{Header{partType, partLength}, content})
+			partsSlice = append(partsSlice, part)
 		}
 	}
 	return partsSlice
