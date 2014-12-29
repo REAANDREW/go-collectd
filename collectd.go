@@ -12,6 +12,7 @@ const (
 	PLUGIN          uint16 = 0x0002
 	PLUGIN_INSTANCE uint16 = 0x0003
 	TYPE            uint16 = 0x0004
+	TYPE_INSTANCE   uint16 = 0x0005
 )
 
 type Header struct {
@@ -38,6 +39,7 @@ func init() {
 		PLUGIN:          parseStringPart,
 		PLUGIN_INSTANCE: parseStringPart,
 		TYPE:            parseStringPart,
+		TYPE_INSTANCE:   parseStringPart,
 	}
 }
 

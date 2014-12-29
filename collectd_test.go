@@ -89,7 +89,7 @@ func Test_parsesTheType(t *testing.T) {
 	buffer := bytes.NewBuffer(packetBytes)
 	parts := parseParts(buffer)
 	string_parts, _ := FindStringParts(TYPE, parts)
-	assert.Equal(t, 21, len(string_parts), "number of parts is not equal to 2")
+	assert.Equal(t, 21, len(string_parts), "number of parts is not equal to 21")
 	for counter := 0; counter < 20; counter += 4 {
 		assert.Equal(t, "disk_octets", string_parts[counter].Content, "plugin content does not equal expected")
 		assert.Equal(t, "disk_ops", string_parts[counter+1].Content, "plugin content does not equal expected")
@@ -97,4 +97,17 @@ func Test_parsesTheType(t *testing.T) {
 		assert.Equal(t, "disk_merged", string_parts[counter+3].Content, "plugin content does not equal expected")
 	}
 	assert.Equal(t, "cpu", string_parts[20].Content, "plugin content does not equal expected")
+}
+
+func Test_parsesTheTypeInstance(t *testing.T) {
+	buffer := bytes.NewBuffer(packetBytes)
+	parts := parseParts(buffer)
+	string_parts, _ := FindStringParts(TYPE_INSTANCE, parts)
+	assert.Equal(t, 6, len(string_parts), "number of parts is not equal to 6")
+	assert.Equal(t, "user", string_parts[0].Content, "plugin content does not equal expected")
+	assert.Equal(t, "nice", string_parts[1].Content, "plugin content does not equal expected")
+	assert.Equal(t, "system", string_parts[2].Content, "plugin content does not equal expected")
+	assert.Equal(t, "idle", string_parts[3].Content, "plugin content does not equal expected")
+	assert.Equal(t, "wait", string_parts[4].Content, "plugin content does not equal expected")
+	assert.Equal(t, "interrupt", string_parts[5].Content, "plugin content does not equal expected")
 }
