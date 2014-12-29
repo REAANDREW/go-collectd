@@ -11,6 +11,7 @@ const (
 	HIGH_DEF_TIME   uint16 = 0x0008
 	PLUGIN          uint16 = 0x0002
 	PLUGIN_INSTANCE uint16 = 0x0003
+	TYPE            uint16 = 0x0004
 )
 
 type Header struct {
@@ -36,6 +37,7 @@ func init() {
 		HIGH_DEF_TIME:   parseHighDefNumericPart,
 		PLUGIN:          parseStringPart,
 		PLUGIN_INSTANCE: parseStringPart,
+		TYPE:            parseStringPart,
 	}
 }
 
