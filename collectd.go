@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	HOSTNAME        uint16 = 0x0000
-	HIGH_DEF_TIME   uint16 = 0x0008
-	PLUGIN          uint16 = 0x0002
-	PLUGIN_INSTANCE uint16 = 0x0003
-	TYPE            uint16 = 0x0004
-	TYPE_INSTANCE   uint16 = 0x0005
+	HOSTNAME          uint16 = 0x0000
+	HIGH_DEF_TIME     uint16 = 0x0008
+	PLUGIN            uint16 = 0x0002
+	PLUGIN_INSTANCE   uint16 = 0x0003
+	TYPE              uint16 = 0x0004
+	TYPE_INSTANCE     uint16 = 0x0005
+	HIGH_DEF_INTERVAL uint16 = 0x0009
 )
 
 type Header struct {
@@ -34,12 +35,13 @@ var parsers map[uint16]parsePart
 
 func init() {
 	parsers = map[uint16]parsePart{
-		HOSTNAME:        parseStringPart,
-		HIGH_DEF_TIME:   parseHighDefNumericPart,
-		PLUGIN:          parseStringPart,
-		PLUGIN_INSTANCE: parseStringPart,
-		TYPE:            parseStringPart,
-		TYPE_INSTANCE:   parseStringPart,
+		HOSTNAME:          parseStringPart,
+		HIGH_DEF_TIME:     parseHighDefNumericPart,
+		PLUGIN:            parseStringPart,
+		PLUGIN_INSTANCE:   parseStringPart,
+		TYPE:              parseStringPart,
+		TYPE_INSTANCE:     parseStringPart,
+		HIGH_DEF_INTERVAL: parseHighDefNumericPart,
 	}
 }
 
