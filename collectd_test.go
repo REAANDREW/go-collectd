@@ -116,6 +116,6 @@ func Test_parsesTheHighDefinitionInterval(t *testing.T) {
 	buffer := bytes.NewBuffer(packetBytes)
 	parts := parseParts(buffer)
 	numeric_parts, _ := FindNumericParts(HIGH_DEF_INTERVAL, parts)
-	assert.Equal(t, 1, len(numeric_parts), "number of parts is not equal to 26")
+	assert.Equal(t, 1, len(numeric_parts), "number of parts is not equal to 1")
 	assert.Equal(t, 2, numeric_parts[0].Content, "contents does not equal expected")
 }

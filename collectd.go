@@ -14,6 +14,7 @@ const (
 	TYPE              uint16 = 0x0004
 	TYPE_INSTANCE     uint16 = 0x0005
 	HIGH_DEF_INTERVAL uint16 = 0x0009
+	MESSAGE           uint16 = 0x0100
 )
 
 type Header struct {
@@ -42,6 +43,7 @@ func init() {
 		TYPE:              parseStringPart,
 		TYPE_INSTANCE:     parseStringPart,
 		HIGH_DEF_INTERVAL: parseHighDefNumericPart,
+		MESSAGE:           parseStringPart,
 	}
 }
 
