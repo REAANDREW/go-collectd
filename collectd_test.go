@@ -47,6 +47,19 @@ func FindNumericParts(partTypeId uint16, parts []interface{}) (numericParts []Nu
 	return returnParts, nil
 }
 
+func FindValueParts(parts []interface{}) (valueParts []ValuePart, err error) {
+	var returnParts []ValuePart
+	for _, value := range parts {
+		switch value := value.(type) {
+		case ValuePart:
+			if value.Header.Type == VALUE {
+				returnParts = append(returnParts, value)
+			}
+		}
+	}
+	return returnParts, nil
+}
+
 func Test_parsesTheHostname(t *testing.T) {
 	buffer := bytes.NewBuffer(packetBytes)
 	parts := parseParts(buffer)
@@ -118,4 +131,11 @@ func Test_parsesTheHighDefinitionInterval(t *testing.T) {
 	numeric_parts, _ := FindNumericParts(HIGH_DEF_INTERVAL, parts)
 	assert.Equal(t, 1, len(numeric_parts), "number of parts is not equal to 1")
 	assert.Equal(t, 2, numeric_parts[0].Content, "contents does not equal expected")
+}
+
+func Test_parsesTheValuesPart(t *testing.T) {
+	buffer := bytes.NewBuffer(packetBytes)
+	parts := parseParts(buffer)
+	value_parts, _ := FindValueParts(parts)
+	assert.Equal(t, 26, len(value_parts), "number of parts is not equal to 1")
 }

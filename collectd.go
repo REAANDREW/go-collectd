@@ -14,7 +14,7 @@ const (
 	TYPE              uint16 = 0x0004
 	TYPE_INSTANCE     uint16 = 0x0005
 	HIGH_DEF_INTERVAL uint16 = 0x0009
-	MESSAGE           uint16 = 0x0100
+	VALUE             uint16 = 0x0006
 )
 
 type Header struct {
@@ -32,6 +32,17 @@ type NumericPart struct {
 	Content int64
 }
 
+type ValuePart struct {
+	Header         Header
+	NumberOfValues uint16
+	Values         []interface{}
+}
+
+type CounterValue uint32
+type GaugeValue float64
+type DeriveValue int32
+type AbsoluteValue int32
+
 var parsers map[uint16]parsePart
 
 func init() {
@@ -43,7 +54,7 @@ func init() {
 		TYPE:              parseStringPart,
 		TYPE_INSTANCE:     parseStringPart,
 		HIGH_DEF_INTERVAL: parseHighDefNumericPart,
-		MESSAGE:           parseStringPart,
+		VALUE:             parseValuePart,
 	}
 }
 
@@ -88,6 +99,56 @@ func parseHighDefNumericPart(header Header, buffer *bytes.Buffer) (part interfac
 		return NumericPart{}, err
 	}
 	return NumericPart{numericPart.Header, numericPart.Content >> 30}, nil
+}
+
+func parseValuePart(header Header, buffer *bytes.Buffer) (part interface{}, err error) {
+	valuesSlice := buffer.Next(int(header.Length - 4))
+	valuesBuffer := bytes.NewBuffer(valuesSlice)
+
+	var valueParts []interface{}
+	var numberOfValues uint16
+	err = binary.Read(valuesBuffer, binary.BigEndian, &numberOfValues)
+	if err != nil {
+		return ValuePart{}, err
+	}
+	for counter := uint16(0); counter < numberOfValues; counter += 1 {
+		var valueType uint8
+		err = binary.Read(valuesBuffer, binary.BigEndian, &valueType)
+		if err != nil {
+			return ValuePart{}, err
+		}
+		switch valueType {
+		case 0:
+			var counterValue CounterValue
+			err = binary.Read(valuesBuffer, binary.BigEndian, &counterValue)
+			if err != nil {
+				return ValuePart{}, err
+			}
+			valueParts = append(valueParts, counterValue)
+		case 1:
+			var gaugeValue GaugeValue
+			err = binary.Read(valuesBuffer, binary.LittleEndian, &gaugeValue)
+			if err != nil {
+				return ValuePart{}, err
+			}
+			valueParts = append(valueParts, gaugeValue)
+		case 2:
+			var deriveValue DeriveValue
+			err = binary.Read(valuesBuffer, binary.BigEndian, &deriveValue)
+			if err != nil {
+				return ValuePart{}, err
+			}
+			valueParts = append(valueParts, deriveValue)
+		case 3:
+			var absoluteValue AbsoluteValue
+			err = binary.Read(valuesBuffer, binary.BigEndian, &absoluteValue)
+			if err != nil {
+				return ValuePart{}, err
+			}
+			valueParts = append(valueParts, absoluteValue)
+		}
+	}
+	return ValuePart{header, numberOfValues, valueParts}, nil
 }
 
 func parseParts(buffer *bytes.Buffer) []interface{} {
